@@ -163,6 +163,7 @@ export default async function SettingsPage() {
       </Card>
 
       <Card
+        id="users"
         title="Users & permissions"
         description={`${team.length} ${team.length === 1 ? 'person has' : 'people have'} access to ${org.name}.`}
         action={canManageUsers
@@ -211,6 +212,7 @@ export default async function SettingsPage() {
       </Card>
 
       <Card
+        id="locations"
         title="Locations"
         description={`${locations.length} in ${org.name}.`}
         action={can(ctx, 'org.locations')
@@ -239,7 +241,7 @@ export default async function SettingsPage() {
         )}
       </Card>
 
-      <Card title="Notifications" description="These are per person, not per business.">
+      <Card id="notifications" title="Notifications" description="These are per person, not per business.">
         <div className="overflow-x-auto">
           <table className="w-full text-[13.5px]">
             <thead>

@@ -149,13 +149,13 @@ export function Badge({
 }
 
 export function Card({
-  title, description, action, children, className,
+  title, description, action, children, className, id,
 }: {
   title?: string; description?: string; action?: React.ReactNode;
-  children: React.ReactNode; className?: string;
+  children: React.ReactNode; className?: string; id?: string;
 }) {
   return (
-    <section className={clsx('rounded-lg border border-ink-200 bg-white', className)}>
+    <section id={id} className={clsx('scroll-mt-20 rounded-lg border border-ink-200 bg-white', className)}>
       {(title || action) && (
         <header className="flex items-start justify-between gap-4 border-b border-ink-100 px-5 py-4">
           <div className="min-w-0">

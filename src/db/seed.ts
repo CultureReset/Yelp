@@ -430,6 +430,42 @@ async function main() {
     notifyUserIds: [owner.id],
   });
 
+
+  console.log('Unclaimed listings to practise claiming on…');
+  await db.insert(s.businesses).values([
+    {
+      slug: 'la-fonda-verde-austin', name: 'La Fonda Verde',
+      status: 'published', claimStatus: 'unclaimed',
+      address1: '905 E 6th St', city: 'Austin', state: 'TX', postalCode: '78702',
+      lat: '30.2665000', lng: '-97.7345000', geoPrecision: 'rooftop',
+      phone: '(512) 555-0177', phoneE164: '+15125550177',
+      website: 'https://lafondaverde.com', websiteDomain: 'lafondaverde.com',
+      priceTier: 2, ratingAvg: '4.1', reviewCount: 23,
+      timezone: 'America/Chicago',
+      description: 'Neighbourhood spot for enchiladas and micheladas.',
+    },
+    {
+      slug: 'brightline-plumbing-austin', name: 'Brightline Plumbing',
+      status: 'published', claimStatus: 'unclaimed',
+      address1: '4102 Burnet Rd', city: 'Austin', state: 'TX', postalCode: '78756',
+      lat: '30.3155000', lng: '-97.7390000', geoPrecision: 'interpolated',
+      phone: '(512) 555-0121', phoneE164: '+15125550121',
+      priceTier: 2, ratingAvg: '4.7', reviewCount: 88,
+      timezone: 'America/Chicago',
+      isServiceArea: true, serviceAreaRadiusMi: 30,
+      description: 'Emergency and scheduled plumbing across greater Austin.',
+    },
+    {
+      slug: 'cedar-park-barbers', name: 'Cedar Park Barbers',
+      status: 'published', claimStatus: 'unclaimed',
+      address1: '1200 N Bell Blvd', city: 'Cedar Park', state: 'TX', postalCode: '78613',
+      lat: '30.5120000', lng: '-97.8200000', geoPrecision: 'rooftop',
+      priceTier: 1, ratingAvg: '4.4', reviewCount: 41,
+      timezone: 'America/Chicago',
+      description: 'Walk-in barbershop, six chairs, open seven days.',
+    },
+  ]);
+
   console.log('\nSeed complete.');
   console.log('  Sign in:  owner@rosastaqueria.com  /  CorrectHorseBattery1   (Owner, 2 locations)');
   console.log('  Also try: front@rosastaqueria.com  /  CorrectHorseBattery1   (Responder, 1 location)');
