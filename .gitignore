@@ -7,3 +7,10 @@ build/
 *.tsbuildinfo
 next-env.d.ts
 .DS_Store
+
+# Android signing material — never commit these.
+android/keystore.jks
+android/*.keystore
+android/app-release*.aab
+android/app-release*.apk
+twa-manifest.json
