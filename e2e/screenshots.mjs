@@ -1,50 +1,53 @@
 import { chromium } from 'playwright';
 
+const BASE = 'http://localhost:3100';
+const PAGES = [
+  ['home', '/dashboard'],
+  ['inbox', '/dashboard/inbox'],
+  ['reviews', '/dashboard/reviews'],
+  ['photos', '/dashboard/photos'],
+  ['business', '/dashboard/business'],
+  ['menu', '/dashboard/menu'],
+  ['programs', '/dashboard/programs'],
+  ['analytics', '/dashboard/analytics'],
+  ['billing', '/dashboard/billing'],
+  ['settings', '/dashboard/settings'],
+];
+
 const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' });
-const ctx = await b.newContext({ viewport: { width: 1280, height: 900 } });
-const p = await ctx.newPage();
-const out = '/tmp/shots';
+const errors = [];
 
-p.on('console', m => { if (m.type() === 'error') console.log('CONSOLE ERROR:', m.text()); });
-p.on('pageerror', e => console.log('PAGE ERROR:', e.message));
+async function run(label, viewport, isMobile) {
+  const c = await b.newContext({ viewport, isMobile, deviceScaleFactor: 1 });
+  const p = await c.newPage();
+  p.on('pageerror', e => errors.push(`${label}: ${e.message}`));
+  p.on('response', r => { if (r.status() >= 500) errors.push(`${label} ${r.url()} -> ${r.status()}`); });
 
-await p.goto('http://localhost:3100/login', { waitUntil: 'networkidle' });
-await p.screenshot({ path: `${out}/01-login.png` });
-console.log('login rendered');
+  await p.goto(`${BASE}/login`);
+  await p.fill('#email', 'owner@rosastaqueria.com');
+  await p.fill('#password', 'CorrectHorseBattery1');
+  await Promise.all([p.waitForURL('**/dashboard'), p.click('button[type=submit]')]);
 
-await p.fill('#email', 'owner@rosastaqueria.com');
-await p.fill('#password', 'CorrectHorseBattery1');
-await Promise.all([
-  p.waitForURL('**/dashboard', { timeout: 20000 }),
-  p.click('button[type=submit]'),
-]);
-await p.waitForLoadState('networkidle');
-await p.screenshot({ path: `${out}/02-home.png`, fullPage: true });
-console.log('LOGIN OK →', p.url());
+  for (const [name, path] of PAGES) {
+    await p.goto(BASE + path, { waitUntil: 'domcontentloaded' });
+    await p.waitForTimeout(600);
+    await p.screenshot({ path: `/tmp/shots/${label}-${name}.png`, fullPage: true });
+  }
 
-for (const [name, path] of [
-  ['03-reviews', '/dashboard/reviews'],
-  ['04-reviews-unreplied', '/dashboard/reviews?filter=unreplied'],
-  ['05-business', '/dashboard/business'],
-  ['06-analytics', '/dashboard/analytics'],
-  ['07-inbox', '/dashboard/inbox'],
-]) {
-  await p.goto(`http://localhost:3100${path}`, { waitUntil: 'networkidle' });
-  await p.screenshot({ path: `${out}/${name}.png`, fullPage: true });
-  console.log(name, 'ok');
+  // Deepest route: one conversation thread.
+  await p.goto(`${BASE}/dashboard/inbox`, { waitUntil: 'domcontentloaded' });
+  const first = p.locator('a[href^="/dashboard/inbox/"]').first();
+  if (await first.count()) {
+    await first.click();
+    await p.waitForTimeout(900);
+    await p.screenshot({ path: `/tmp/shots/${label}-thread.png`, fullPage: true });
+  }
+  await c.close();
+  console.log(label, 'captured', PAGES.length + 1, 'screens');
 }
 
-// Mobile viewport — the responsive web app has to work on a phone browser.
-const m = await b.newContext({ viewport: { width: 390, height: 844 }, isMobile: true });
-const mp = await m.newPage();
-await mp.goto('http://localhost:3100/login', { waitUntil: 'networkidle' });
-await mp.fill('#email', 'owner@rosastaqueria.com');
-await mp.fill('#password', 'CorrectHorseBattery1');
-await Promise.all([mp.waitForURL('**/dashboard'), mp.click('button[type=submit]')]);
-await mp.waitForLoadState('networkidle');
-await mp.screenshot({ path: `${out}/08-mobile-home.png`, fullPage: true });
-await mp.goto('http://localhost:3100/dashboard/reviews', { waitUntil: 'networkidle' });
-await mp.screenshot({ path: `${out}/09-mobile-reviews.png`, fullPage: true });
-console.log('mobile ok');
+await run('d', { width: 1280, height: 900 }, false);
+await run('m', { width: 390, height: 844 }, true);
 
+console.log(errors.length ? 'ERRORS:\n' + errors.join('\n') : 'No page errors, no 5xx responses.');
 await b.close();

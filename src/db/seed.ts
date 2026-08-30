@@ -279,6 +279,157 @@ async function main() {
     })),
   );
 
+
+  console.log('Photos, menu, services…');
+  const PHOTO_TAGS = ['food','food','food','interior','exterior','drink','menu','team'];
+  const mediaRows = [];
+  for (let i = 0; i < 18; i++) {
+    const owner_ = i < 10;
+    mediaRows.push({
+      businessId: main.id,
+      uploaderId: owner_ ? owner.id : crypto.randomUUID(),
+      uploaderName: owner_ ? 'Rosa Delgado' : `${pick(FIRST, i + 3)} ${pick(LAST, i)}`,
+      source: owner_ ? 'owner' : 'consumer',
+      kind: 'photo' as const,
+      storageKey: `seed/photo-${i}.jpg`,
+      mimeType: 'image/jpeg',
+      bytes: 400_000 + i * 9_000,
+      width: 1600, height: 1200,
+      caption: owner_ ? ['Al pastor trompo at dinner service','The salsa bar','Dining room','Patio at golden hour','Birria plate','Horchata','Weekend brunch spread','Our kitchen team','Street tacos, three ways','Front counter'][i] : null,
+      altText: owner_ ? 'Photo of food and interior at Rosa\'s Taqueria' : null,
+      tags: [pick(PHOTO_TAGS, i)],
+      isCover: i === 0,
+      sortOrder: i,
+      viewCount: 400 - i * 17,
+      moderationStatus: i === 9 ? 'pending' : i === 15 ? 'rejected' : 'approved',
+      moderationReason: i === 15 ? 'Image is mostly text. Photos should show the business, food, or team.' : null,
+      createdAt: daysAgo(i * 6 + 2),
+    });
+  }
+  await db.insert(s.media).values(mediaRows);
+  await sql`update businesses set photo_count = ${mediaRows.length} where id = ${main.id}`;
+
+  await db.insert(s.services).values([
+    { businessId: main.id, name: 'Taco catering (drop-off)', description: 'Trays, tortillas, and salsa bar. Serves 20 minimum.', priceLowCents: 1400, priceHighCents: 1800, priceUnit: 'flat', sortOrder: 1 },
+    { businessId: main.id, name: 'On-site taquiza', description: 'We bring the trompo and a cook. Two hour service.', priceLowCents: 65000, priceHighCents: 120000, priceUnit: 'flat', durationMin: 120, sortOrder: 2 },
+    { businessId: main.id, name: 'Private dining room', description: 'Seats 24. Two hour minimum.', priceLowCents: 25000, priceUnit: 'flat', durationMin: 120, sortOrder: 3 },
+  ]);
+
+  const [tacos, plates, drinks] = await db.insert(s.menuSections).values([
+    { businessId: main.id, name: 'Tacos', description: 'Corn tortillas made in house. Three per order.', sortOrder: 1 },
+    { businessId: main.id, name: 'Plates', description: 'Served with rice, beans, and tortillas.', sortOrder: 2 },
+    { businessId: main.id, name: 'Drinks', sortOrder: 3, source: 'partner' },
+  ]).returning();
+
+  await db.insert(s.menuItems).values([
+    { sectionId: tacos.id, businessId: main.id, name: 'Al pastor', description: 'Marinated pork off the trompo, pineapple, onion, cilantro.', priceCents: 1250, isPopular: true, sortOrder: 1 },
+    { sectionId: tacos.id, businessId: main.id, name: 'Carne asada', description: 'Chopped skirt steak, salsa verde.', priceCents: 1350, sortOrder: 2 },
+    { sectionId: tacos.id, businessId: main.id, name: 'Nopales', description: 'Grilled cactus, queso fresco.', priceCents: 1100, dietaryTags: ['vegetarian'], sortOrder: 3 },
+    { sectionId: tacos.id, businessId: main.id, name: 'Hongos', description: 'Roasted mushrooms, salsa macha.', priceCents: 1100, dietaryTags: ['vegan','vegetarian'], sortOrder: 4 },
+    { sectionId: plates.id, businessId: main.id, name: 'Birria de res', description: 'Slow braised beef, consommé for dipping.', priceCents: 1850, isPopular: true, sortOrder: 1 },
+    { sectionId: plates.id, businessId: main.id, name: 'Chile relleno', description: 'Poblano, oaxaca cheese, tomato broth.', priceCents: 1600, dietaryTags: ['vegetarian'], sortOrder: 2 },
+    { sectionId: drinks.id, businessId: main.id, name: 'Horchata', priceCents: 450, source: 'partner', sortOrder: 1 },
+    { sectionId: drinks.id, businessId: main.id, name: 'Jarritos', priceCents: 400, source: 'partner', sortOrder: 2 },
+  ]);
+
+  console.log('Programs, campaigns, billing…');
+  const [adProgram] = await db.insert(s.programs).values({
+    businessId: main.id, orgId: org.id, kind: 'ads', status: 'active',
+    billingPeriod: 'monthly', startedAt: daysAgo(96),
+  }).returning();
+
+  await db.insert(s.programs).values([
+    { businessId: main.id, orgId: org.id, kind: 'upgrade_profile', status: 'active', priceCents: 15900, billingPeriod: 'monthly', startedAt: daysAgo(96) },
+    { businessId: main.id, orgId: org.id, kind: 'remove_competitor_ads', status: 'active', priceCents: 8900, billingPeriod: 'monthly', startedAt: daysAgo(60) },
+    { businessId: main.id, orgId: org.id, kind: 'deals', status: 'paused', startedAt: daysAgo(200), cancelledAt: daysAgo(40) },
+  ]);
+
+  await db.insert(s.entitlements).values([
+    { businessId: main.id, programId: adProgram.id, feature: 'cta_button' },
+    { businessId: main.id, programId: adProgram.id, feature: 'slideshow' },
+    { businessId: main.id, programId: adProgram.id, feature: 'logo' },
+    { businessId: main.id, programId: adProgram.id, feature: 'no_competitor_ads' },
+  ]);
+
+  const [camp] = await db.insert(s.adCampaigns).values({
+    programId: adProgram.id, businessId: main.id,
+    name: 'Austin — lunch & dinner',
+    objective: 'leads', budgetCents: 120000, budgetPeriod: 'monthly',
+    bidStrategy: 'auto', geoMode: 'radius', geoRadiusMi: 8,
+    keywordTargets: ['tacos','taqueria','birria','mexican food','catering'],
+    negativeKeywords: ['free','recipe','jobs'],
+    creative: { headline: 'Jalisco-style tacos on East Cesar Chavez', cta: 'Call now' },
+    status: 'active', startedAt: daysAgo(96),
+  }).returning();
+
+  const spendRows = [];
+  let monthSpend = 0;
+  for (let i = 0; i < 30; i++) {
+    const d = daysAgo(i);
+    const clicks = 14 + ((i * 13) % 11);
+    const cpc = 138 + ((i * 7) % 40);
+    const spend = clicks * cpc;
+    if (i < 30) monthSpend += spend;
+    spendRows.push({
+      campaignId: camp.id, businessId: main.id, day: dayKey(d),
+      impressions: clicks * (22 + (i % 9)),
+      clicks, leads: Math.round(clicks * 0.31),
+      spendCents: spend, invalidClicks: i % 7 === 0 ? 1 : 0,
+    });
+  }
+  await db.insert(s.adSpendDaily).values(spendRows);
+
+  await db.insert(s.paymentMethods).values([
+    { orgId: org.id, providerId: 'pm_seed_visa', kind: 'card', brand: 'Visa', last4: '4242', expMonth: 11, expYear: 2027, isDefault: true, addedBy: owner.id },
+    { orgId: org.id, providerId: 'pm_seed_mc', kind: 'card', brand: 'Mastercard', last4: '8210', expMonth: 3, expYear: 2026, isDefault: false, addedBy: owner.id },
+  ]);
+
+  const invoiceDefs = [
+    { n: 'INV-2026-0006', off: 0,  status: 'open' },
+    { n: 'INV-2026-0005', off: 1,  status: 'paid' },
+    { n: 'INV-2026-0004', off: 2,  status: 'paid' },
+    { n: 'INV-2026-0003', off: 3,  status: 'paid' },
+  ];
+  for (const def of invoiceDefs) {
+    const end = new Date(); end.setMonth(end.getMonth() - def.off, 0);
+    const start = new Date(end.getFullYear(), end.getMonth(), 1);
+    const ads = def.off === 0 ? monthSpend : 52000 + def.off * 4100;
+    const subtotal = ads + 15900 + 8900;
+    const tax = Math.round(subtotal * 0.0825);
+    const [inv] = await db.insert(s.invoices).values({
+      orgId: org.id, number: def.n,
+      periodStart: dayKey(start), periodEnd: dayKey(end),
+      subtotalCents: subtotal, taxCents: tax, totalCents: subtotal + tax,
+      status: def.status,
+      issuedAt: end, dueAt: end, paidAt: def.status === 'paid' ? end : null,
+    }).returning();
+    await db.insert(s.invoiceLines).values([
+      { invoiceId: inv.id, businessId: main.id, businessName: "Rosa's Taqueria", description: 'Ads — cost per click', quantity: 1, unitCents: ads, amountCents: ads, programKind: 'ads' },
+      { invoiceId: inv.id, businessId: main.id, businessName: "Rosa's Taqueria", description: 'Enhanced profile', quantity: 1, unitCents: 15900, amountCents: 15900, programKind: 'upgrade_profile' },
+      { invoiceId: inv.id, businessId: main.id, businessName: "Rosa's Taqueria", description: 'Remove competitor ads', quantity: 1, unitCents: 8900, amountCents: 8900, programKind: 'remove_competitor_ads' },
+    ]);
+  }
+
+  console.log('Message templates and inbox settings…');
+  await db.insert(s.messageTemplates).values([
+    { businessId: main.id, createdBy: owner.id, name: 'Catering enquiry', body: 'Hi {{customer_name}}, thanks for reaching out! We cater groups from 20 up to 300. Trays run $14–18 per person and include tortillas and our salsa bar. What date are you looking at?', useCount: 34 },
+    { businessId: main.id, createdBy: owner.id, name: 'Hours question', body: 'Hi {{customer_name}}! We are open 11–3 and 5–9 daily, closed Mondays. Kitchen runs to 11:30pm on Friday and Saturday.', useCount: 51 },
+    { businessId: main.id, createdBy: owner.id, name: 'Not available', body: 'Hi {{customer_name}}, thank you for thinking of us. We are booked for that date, but I would be glad to help if your plans shift.', useCount: 12 },
+  ]);
+
+  await db.insert(s.inboxSettings).values({
+    businessId: main.id,
+    autoReplyEnabled: true,
+    autoReplyBody: 'Thanks for reaching out to Rosa\'s! We usually reply within an hour during open hours.',
+    autoReplyDelaySec: 30,
+    offHoursReplyEnabled: true,
+    offHoursReplyBody: 'We are closed right now. We will get back to you when we open at 11am.',
+    leadCategories: ['Catering', 'Private events'],
+    leadRadiusMi: 25,
+    leadBudgetFloorCents: 30000,
+    notifyUserIds: [owner.id],
+  });
+
   console.log('\nSeed complete.');
   console.log('  Sign in:  owner@rosastaqueria.com  /  CorrectHorseBattery1   (Owner, 2 locations)');
   console.log('  Also try: front@rosastaqueria.com  /  CorrectHorseBattery1   (Responder, 1 location)');
