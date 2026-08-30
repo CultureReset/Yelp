@@ -46,7 +46,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
             <Sidebar items={navItems} counts={counts} />
           </div>
         </aside>
-        <main className="min-w-0 px-4 py-6 sm:px-6 lg:px-8">
+        <main className="min-w-0 px-4 pb-24 pt-5 sm:px-6 sm:pb-6 sm:pt-6 lg:px-8">
           <div className="mx-auto max-w-5xl">{children}</div>
         </main>
       </div>

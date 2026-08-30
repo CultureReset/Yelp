@@ -4,7 +4,8 @@ import { useState } from 'react';
 import Link from 'next/link';
 import clsx from 'clsx';
 import { logoutAction } from '@/lib/auth/actions';
-import { Sidebar } from './sidebar';
+import { BottomNav } from './bottom-nav';
+import { MobileMore } from './mobile-more';
 import type { NavItem } from '@/lib/nav';
 
 export interface BusinessOption {
@@ -30,24 +31,12 @@ export function Topbar({
 }) {
   const [switcherOpen, setSwitcherOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
 
   return (
     <>
       <header className="sticky top-0 z-30 border-b border-ink-200 bg-white">
         <div className="flex h-14 items-center gap-3 px-4">
-          <button
-            type="button"
-            onClick={() => setMobileNavOpen((v) => !v)}
-            aria-expanded={mobileNavOpen}
-            aria-label="Toggle navigation"
-            className="-ml-1 rounded-md p-2 text-ink-600 hover:bg-ink-100 lg:hidden"
-          >
-            <svg width="18" height="18" viewBox="0 0 20 20" aria-hidden="true">
-              <path d="M3 5h14M3 10h14M3 15h14" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-            </svg>
-          </button>
-
           <Link href="/dashboard" className="shrink-0 text-[15px] font-bold tracking-tight">
             <span className="text-brand-700">◆</span>
             <span className="ml-1 hidden sm:inline">Business</span>
@@ -138,12 +127,12 @@ export function Topbar({
               )}
             </Link>
 
-            <div className="relative">
+            <div className="relative hidden lg:block">
               <button
                 type="button"
                 onClick={() => { setMenuOpen((v) => !v); setSwitcherOpen(false); }}
                 aria-expanded={menuOpen}
-                className="flex items-center gap-2 rounded-md p-1 pr-2 hover:bg-ink-100"
+                className="hidden items-center gap-2 rounded-md p-1 pr-2 hover:bg-ink-100 lg:flex"
               >
                 <span className="flex h-7 w-7 items-center justify-center rounded-full bg-ink-900 text-[11px] font-bold text-white">
                   {userName.slice(0, 1).toUpperCase()}
@@ -183,11 +172,23 @@ export function Topbar({
         </div>
       </header>
 
-      {mobileNavOpen && (
-        <div className="border-b border-ink-200 bg-white lg:hidden">
-          <Sidebar items={navItems} counts={counts} onNavigate={() => setMobileNavOpen(false)} />
-        </div>
-      )}
+      <BottomNav
+        items={navItems}
+        counts={counts}
+        moreOpen={moreOpen}
+        onMore={() => setMoreOpen((v) => !v)}
+      />
+
+      <MobileMore
+        open={moreOpen}
+        onClose={() => setMoreOpen(false)}
+        items={navItems}
+        counts={counts}
+        userName={userName}
+        orgName={orgName}
+        roleLabel={roleLabel}
+        publicHref={publicHref}
+      />
     </>
   );
 }
