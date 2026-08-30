@@ -1,0 +1,71 @@
+@import "tailwindcss";
+
+/*
+ * Tokens. The dashboard, the public-page preview, and (later) the mobile app
+ * all read from this one set — that's what keeps them agreeing on what a
+ * business page looks like.
+ */
+@theme {
+  --color-brand-50:  #fef2f2;
+  --color-brand-100: #fee2e1;
+  --color-brand-200: #fecac8;
+  --color-brand-300: #fca9a5;
+  --color-brand-400: #f77872;
+  --color-brand-500: #ee4d47;
+  --color-brand-600: #d8302a;
+  --color-brand-700: #b3231e;
+  --color-brand-800: #94211d;
+  --color-brand-900: #7b221f;
+
+  --color-ink-50:  #f7f7f8;
+  --color-ink-100: #eeeef0;
+  --color-ink-200: #d9d9de;
+  --color-ink-300: #b8b8c0;
+  --color-ink-400: #90909c;
+  --color-ink-500: #71717f;
+  --color-ink-600: #5a5a66;
+  --color-ink-700: #4a4a53;
+  --color-ink-800: #3f3f47;
+  --color-ink-900: #1a1a1d;
+  --color-ink-950: #131316;
+
+  --color-good-50:  #ecfdf5;
+  --color-good-500: #10b981;
+  --color-good-700: #047857;
+  --color-warn-50:  #fffbeb;
+  --color-warn-500: #f59e0b;
+  --color-warn-700: #b45309;
+  --color-bad-50:   #fef2f2;
+  --color-bad-500:  #ef4444;
+  --color-bad-700:  #b91c1c;
+
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  background: var(--color-ink-50);
+  color: var(--color-ink-900);
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+*:focus-visible {
+  outline: 2px solid var(--color-brand-600);
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Numbers that line up in columns. */
+.tnum { font-variant-numeric: tabular-nums; }
